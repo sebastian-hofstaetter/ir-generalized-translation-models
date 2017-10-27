@@ -196,7 +196,7 @@ public class AugmentedTermQuery extends Query {
             this.similarTermStates = similarTermStates;
             this.mainTermStates = mainTermStates;
 
-            debugOutput(searcher, mainTermStates, similarTermStates);
+            //debugOutput(searcher, mainTermStates, similarTermStates);
 
             this.stats = handleStatistics(searcher, needsScores, mainTermStates);
         }

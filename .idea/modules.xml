@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/Extensions/extensions.iml" filepath="$PROJECT_DIR$/Extensions/extensions.iml" />
+      <module fileurl="file://$PROJECT_DIR$/ir-translation-models.iml" filepath="$PROJECT_DIR$/ir-translation-models.iml" />
+      <module fileurl="file://$PROJECT_DIR$/LuceneEvaluation/lucene-evaluation.iml" filepath="$PROJECT_DIR$/LuceneEvaluation/lucene-evaluation.iml" />
+    </modules>
+  </component>
+</project>
