@@ -24,7 +24,7 @@ import java.util.List;
  */
 public class SimilarityApiParser implements QualityQueryParser {
 
-    private final ISimilarityApi similarityApi;
+    private ISimilarityApi similarityApi;
     private String queryPart;
     private String indexField;
     private boolean useAugmentedVersion;
@@ -33,14 +33,16 @@ public class SimilarityApiParser implements QualityQueryParser {
     /**
      * Constructor of a simple qq parser.
      */
-    public SimilarityApiParser(String queryPart, String indexField,boolean useAugmentedVersion, AugmentedTermQuery.ModelMethod method) {
+    public SimilarityApiParser(String queryPart, String indexField, boolean useAugmentedVersion, AugmentedTermQuery.ModelMethod method) {
         this.queryPart = queryPart;
         this.indexField = indexField;
 
         this.useAugmentedVersion = useAugmentedVersion;
         this.method = method;
+    }
 
-        similarityApi = new SimilarityApi("http://localhost:5000/api/v1.0/relatedterms", null);
+    public void setSimilarityApi(ISimilarityApi similarityApi){
+        this.similarityApi = similarityApi;
     }
 
     /* (non-Javadoc)
@@ -110,7 +112,7 @@ public class SimilarityApiParser implements QualityQueryParser {
             throw new RuntimeException(e);
         }
 
-        String[] rawQueryTerms = qq.getValue(queryPart).split(" ");
+        String[] rawQueryTerms = qq.getValue(queryPart).split(" "); // todo remove non text chars (?)
 
         for(int i = 0;i<rawQueryTerms.length;i++){
             rawQueryTerms[i] = rawQueryTerms[i].toLowerCase();
@@ -129,7 +131,11 @@ public class SimilarityApiParser implements QualityQueryParser {
 
         List<SimilarTermModel> transformedSimilarTerms = new ArrayList<>();
         for(SimilarTermModel m : similarTerms){
-            String mainStemmed =termsFromTokenStream(analyzer.tokenStream(indexField, m.queryTerm.text()))[0];
+            String[] st = termsFromTokenStream(analyzer.tokenStream(indexField, m.queryTerm.text()));
+            if(st.length==0){
+                continue;
+            }
+            String mainStemmed = st[0];
 
             List<TermWeightTuple> similar = new ArrayList<>();
             for (int j = 0; j < m.similarTerms.length; j++) {
