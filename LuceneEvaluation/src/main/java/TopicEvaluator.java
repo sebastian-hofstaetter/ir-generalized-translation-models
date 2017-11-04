@@ -14,6 +14,7 @@ import org.apache.lucene.search.similarities.LMDirichletSimilarity;
 import org.apache.lucene.search.similarities.Similarity;
 import org.apache.lucene.store.FSDirectory;
 
+import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.Charset;
@@ -71,6 +72,9 @@ public class TopicEvaluator {
         options.addRequiredOption("o","output-directory",true,
                 "location of the output files per evaluation");
 
+        options.addRequiredOption("ol","output-file-prefix",true,
+                "prefix string for the name of the output file");
+
         options.addRequiredOption("c","result-count",true,
                 "how many results to return per topic");
 
@@ -103,9 +107,10 @@ public class TopicEvaluator {
         for(String sim : similarityClasses){
             for(String mod : translationModels) {
 
-                doEvaluation(Paths.get(parsedArgs.getOptionValue("o") ,sim + "-" + mod + ".txt"),
-                        sim,
-                        mod);
+                Path outputPath = Paths.get(parsedArgs.getOptionValue("o"),
+                                     parsedArgs.getOptionValue("ol") + sim + "_" + mod + ".txt");
+
+                doEvaluation(outputPath, sim, mod);
             }
         }
 
@@ -161,8 +166,24 @@ public class TopicEvaluator {
 
         // set the parser + api instance
         SimilarityApiParser qqParser = new SimilarityApiParser("title", "body", useAugmented, mm);
-        ISimilarityApi similarityApi;
 
+        qqParser.setSimilarityApi(getISimilarityApi());
+
+        //
+        // run the evaluation
+        //
+        QualityBenchmark qrun = new QualityBenchmark(qqs, qqParser, searcher, docNameField);
+        qrun.setMaxResults(Integer.parseInt(parsedArgs.getOptionValue("c")));
+        QualityStats stats[] = qrun.execute(judge, submitLog, new PrintWriter(Files.newBufferedWriter(Paths.get("results/log.txt"), StandardCharsets.UTF_8, StandardOpenOption.CREATE)));
+
+        // print an average sum of the results
+        QualityStats avg = QualityStats.average(stats);
+        avg.log("SUMMARY", 2, logger, "  ");
+        reader.close();
+    }
+
+    private static ISimilarityApi getISimilarityApi() throws IOException {
+        ISimilarityApi similarityApi;
         switch (parsedArgs.getOptionValue("s")){
             case "rest-api":
                 similarityApi = new SimilarityApi(parsedArgs.getOptionValue("so"), null);
@@ -179,20 +200,7 @@ public class TopicEvaluator {
             default:
                 throw new RuntimeException("similarity option : "+parsedArgs.getOptionValue("s")+" not known");
         }
-
-        qqParser.setSimilarityApi(similarityApi);
-
-        //
-        // run the evaluation
-        //
-        QualityBenchmark qrun = new QualityBenchmark(qqs, qqParser, searcher, docNameField);
-        qrun.setMaxResults(Integer.parseInt(parsedArgs.getOptionValue("c")));
-        QualityStats stats[] = qrun.execute(judge, submitLog, new PrintWriter(Files.newBufferedWriter(Paths.get("results/log.txt"), StandardCharsets.UTF_8, StandardOpenOption.CREATE)));
-
-        // print an average sum of the results
-        QualityStats avg = QualityStats.average(stats);
-        avg.log("SUMMARY", 2, logger, "  ");
-        reader.close();
+        return similarityApi;
     }
 
     private static Similarity getSimilarityFromString(String sim) {
