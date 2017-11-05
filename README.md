@@ -1,7 +1,7 @@
 # Hello
 This repository contains the Lucene &amp; Solr implementation of the paper: 
 
-  *Translation Models in the Probabilistic Relevance Framework*, Rekabsaz et al., CIKM '16 (http://dl.acm.org/citation.cfm?id=2983833)
+  *Translation Models in the Probabilistic Relevance Framework*, Rekabsaz et al., CIKM '16 ([ACM citation](http://dl.acm.org/citation.cfm?id=2983833))
 
 ## Implementation
 
@@ -10,6 +10,8 @@ This repository allows to extend Lucene & Solr with a Solr Parser and a Lucene Q
 ![Extension Structure](Documentation/images/extension-structure.png)
 
 *Interaction between extension classes of this repository*
+
+More information can be found in the [Documentation folder](Documentation)
 
 ## Dependencies
 

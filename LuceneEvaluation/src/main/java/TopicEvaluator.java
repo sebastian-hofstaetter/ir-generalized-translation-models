@@ -60,6 +60,10 @@ public class TopicEvaluator {
         options.addRequiredOption("so","similarity-option",true,
                 "based on -s, url or file path ...");
 
+        options.addRequiredOption("sp","similarity-preprocessing",true,
+                "which type of preprocessing should be done before the similarity source is accessed" +
+                          " (tokenize-only or stemmed)");
+
         options.addRequiredOption("t","topic-file",true,
                 "location of a TREC topic file");
 
@@ -144,6 +148,10 @@ public class TopicEvaluator {
         // validate topics & judgments match each other
         judge.validateData(qqs, logger);
 
+
+        //
+        // prepare + set the parser + api instance
+        //
         boolean useAugmented;
         AugmentedTermQuery.ModelMethod mm;
 
@@ -164,9 +172,12 @@ public class TopicEvaluator {
                 throw new RuntimeException("translation model: "+model+" not known");
         }
 
-        // set the parser + api instance
-        SimilarityApiParser qqParser = new SimilarityApiParser("title", "body", useAugmented, mm);
+        SimilarityApiParser.Preprocessing apiPrePro = SimilarityApiParser.Preprocessing.Tokenize;
+        if(parsedArgs.getOptionValue("sp").equals("stemmed")){
+            apiPrePro = SimilarityApiParser.Preprocessing.Stemmed;
+        }
 
+        SimilarityApiParser qqParser = new SimilarityApiParser("title", "body", useAugmented, mm, apiPrePro);
         qqParser.setSimilarityApi(getISimilarityApi());
 
         //
