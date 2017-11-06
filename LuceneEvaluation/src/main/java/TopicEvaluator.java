@@ -15,6 +15,7 @@ import org.apache.lucene.search.similarities.Similarity;
 import org.apache.lucene.store.FSDirectory;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.Charset;
@@ -136,7 +137,14 @@ public class TopicEvaluator {
         // output writers
         //
         PrintWriter logger = new PrintWriter(new OutputStreamWriter(System.out, Charset.defaultCharset()), true);
-        SubmissionReport submitLog = new SubmissionReport(new PrintWriter(Files.newBufferedWriter(submissionFile, StandardCharsets.UTF_8, StandardOpenOption.CREATE)), "lucene");
+        SubmissionReport submitLog;
+
+        // don't output anything when recording only
+        if(parsedArgs.getOptionValue("s").equals("recorder")){
+            submitLog = new SubmissionReport(new PrintWriter(new OutputStream() { public void write(int b) { } }),"");
+        }else {
+            submitLog = new SubmissionReport(new PrintWriter(Files.newBufferedWriter(submissionFile, StandardCharsets.UTF_8, StandardOpenOption.CREATE)), "lucene");
+        }
 
         // use trec utilities to read trec topics into quality queries
         TrecTopicsReader qReader = new TrecTopicsReader();
@@ -185,7 +193,7 @@ public class TopicEvaluator {
         //
         QualityBenchmark qrun = new QualityBenchmark(qqs, qqParser, searcher, docNameField);
         qrun.setMaxResults(Integer.parseInt(parsedArgs.getOptionValue("c")));
-        QualityStats stats[] = qrun.execute(judge, submitLog, new PrintWriter(Files.newBufferedWriter(Paths.get("results/log.txt"), StandardCharsets.UTF_8, StandardOpenOption.CREATE)));
+        QualityStats stats[] = qrun.execute(judge, submitLog, new PrintWriter(new OutputStream() { public void write(int b) { } }));
 
         // print an average sum of the results
         QualityStats avg = QualityStats.average(stats);
