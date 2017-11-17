@@ -14,13 +14,13 @@ import org.apache.lucene.search.similarities.LMDirichletSimilarity;
 import org.apache.lucene.search.similarities.Similarity;
 import org.apache.lucene.store.FSDirectory;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
+import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Main class, used to evaluate a lucene index (created with Indexer.main)
@@ -59,7 +59,7 @@ public class TopicEvaluator {
                 "which similarity source to use to use (rest-api/file/recorder/mock)");
 
         options.addRequiredOption("so","similarity-option",true,
-                "based on -s, url or file path ...");
+                "based on -s, url or file path ... (if s=file, you can set a simple glob (dir/filenamestart) here for multiple evaluations)");
 
         options.addRequiredOption("sp","similarity-preprocessing",true,
                 "which type of preprocessing should be done before the similarity source is accessed" +
@@ -109,21 +109,79 @@ public class TopicEvaluator {
         String[] similarityClasses = parsedArgs.getOptionValue("e").split(",");
         String[] translationModels = parsedArgs.getOptionValue("m").split(",");
 
-        for(String sim : similarityClasses){
-            for(String mod : translationModels) {
+        String simApiSource = parsedArgs.getOptionValue("s");
+        String simApiSourceOption = parsedArgs.getOptionValue("so");
 
-                Path outputPath = Paths.get(parsedArgs.getOptionValue("o"),
-                                     parsedArgs.getOptionValue("ol") + sim + "_" + mod + ".txt");
+        //
+        // file api can use multiple files one after another
+        //
+        if(simApiSource.equals("file")){
 
-                doEvaluation(outputPath, sim, mod);
+            int sep_pos = simApiSourceOption.lastIndexOf(File.separator);
+            String basePath = simApiSourceOption.substring(0, sep_pos + 1);
+            String glob = simApiSourceOption.substring(sep_pos + 1);
+
+            List<Path> files = new ArrayList<>();
+
+            Files.walkFileTree(Paths.get(basePath), new SimpleFileVisitor<Path>() {
+
+                @Override
+                public FileVisitResult visitFile(Path path,
+                                                 BasicFileAttributes attrs) throws IOException {
+
+                    if (path.getFileName().toString().startsWith(glob)) {
+                        files.add(path);
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult visitFileFailed(Path file, IOException exc)
+                        throws IOException {
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+
+            for(Path file : files) {
+                for (String sim : similarityClasses) {
+                    for (String mod : translationModels) {
+
+                        String fname = file.getFileName().toString();
+                        int pos = fname.lastIndexOf(".");
+                        if (pos > 0) {
+                            fname = fname.substring(0, pos);
+                        }
+
+                        Path outputPath = Paths.get(parsedArgs.getOptionValue("o"),
+                                parsedArgs.getOptionValue("ol") + fname + "_" + sim + "_" + mod + ".txt");
+
+                        System.out.println("Evaluating: "+fname + " " + sim + " " + mod );
+
+                        doEvaluation(outputPath, sim, mod, file.toString());
+                    }
+                }
+            }
+        }
+
+        //
+        // all other api sources - eval by simClass & translation models only
+        //
+        else {
+            for(String sim : similarityClasses){
+                for(String mod : translationModels) {
+
+                    Path outputPath = Paths.get(parsedArgs.getOptionValue("o"),
+                            parsedArgs.getOptionValue("ol") + sim + "_" + mod + ".txt");
+
+                    doEvaluation(outputPath, sim, mod,simApiSourceOption);
+                }
             }
         }
 
         indexDirectory.close();
-
     }
 
-    private static void doEvaluation(Path submissionFile, String sim, String model) throws Exception {
+    private static void doEvaluation(Path submissionFile, String sim, String model, String similarityOption) throws Exception {
 
         //
         // prepare index + similarity
@@ -186,7 +244,7 @@ public class TopicEvaluator {
         }
 
         SimilarityApiParser qqParser = new SimilarityApiParser("title", "body", useAugmented, mm, apiPrePro);
-        qqParser.setSimilarityApi(getISimilarityApi());
+        qqParser.setSimilarityApi(getISimilarityApi(similarityOption));
 
         //
         // run the evaluation
@@ -201,17 +259,17 @@ public class TopicEvaluator {
         reader.close();
     }
 
-    private static ISimilarityApi getISimilarityApi() throws IOException {
+    private static ISimilarityApi getISimilarityApi(String similarityOption) throws IOException {
         ISimilarityApi similarityApi;
         switch (parsedArgs.getOptionValue("s")){
             case "rest-api":
-                similarityApi = new SimilarityApi(parsedArgs.getOptionValue("so"), null);
+                similarityApi = new SimilarityApi(similarityOption, null);
                 break;
             case "file":
-                similarityApi = new SimilarityApiFromFile(parsedArgs.getOptionValue("so"));
+                similarityApi = new SimilarityApiFromFile(similarityOption);
                 break;
             case "recorder":
-                similarityApi = new SimilarityRecorder(parsedArgs.getOptionValue("so"));
+                similarityApi = new SimilarityRecorder(similarityOption);
                 break;
             case "mock":
                 similarityApi = new SimilarityApiMock();
