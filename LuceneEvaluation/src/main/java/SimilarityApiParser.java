@@ -3,6 +3,7 @@ import at.ac.tuwien.ifs.api.SimilarTermModel;
 import at.ac.tuwien.ifs.api.SimilarityApi;
 import at.ac.tuwien.ifs.query.AugmentedTermQuery;
 import at.ac.tuwien.ifs.query.TermWeightTuple;
+import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.en.EnglishAnalyzer;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
@@ -35,17 +36,19 @@ public class SimilarityApiParser implements QualityQueryParser {
     private boolean useAugmentedVersion;
     private final AugmentedTermQuery.ModelMethod method;
     private Preprocessing preprocessingMethod;
+    private Analyzer analyzer;
 
     /**
      * Constructor of a simple qq parser.
      */
-    public SimilarityApiParser(String queryPart, String indexField, boolean useAugmentedVersion, AugmentedTermQuery.ModelMethod modelMethod, Preprocessing preprocessingMethod) {
+    public SimilarityApiParser(String queryPart, String indexField, boolean useAugmentedVersion, AugmentedTermQuery.ModelMethod modelMethod, Preprocessing preprocessingMethod, Analyzer analyzer) {
         this.queryPart = queryPart;
         this.indexField = indexField;
 
         this.useAugmentedVersion = useAugmentedVersion;
         this.method = modelMethod;
         this.preprocessingMethod = preprocessingMethod;
+        this.analyzer = analyzer;
     }
 
     public void setSimilarityApi(ISimilarityApi similarityApi){
@@ -78,7 +81,6 @@ public class SimilarityApiParser implements QualityQueryParser {
      * This can be used for a baseline evaluation, without similarity information
      */
     private Query getTermQuery(QualityQuery qq) {
-        EnglishAnalyzer analyzer = new EnglishAnalyzer();
 
         String[] queryTerms;
 
@@ -112,7 +114,6 @@ public class SimilarityApiParser implements QualityQueryParser {
 
 
     private Query getAugmentedTermQuery(QualityQuery qq) throws IOException {
-        EnglishAnalyzer analyzer = new EnglishAnalyzer();
 
         //
         // Prepare terms for api

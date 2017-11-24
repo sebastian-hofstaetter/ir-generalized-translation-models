@@ -2,6 +2,9 @@ import at.ac.tuwien.ifs.api.*;
 import at.ac.tuwien.ifs.query.AugmentedTermQuery;
 import at.ac.tuwien.ifs.query.BM25SimilarityLossless;
 import org.apache.commons.cli.*;
+import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.core.StopAnalyzer;
+import org.apache.lucene.analysis.en.EnglishAnalyzer;
 import org.apache.lucene.benchmark.quality.*;
 import org.apache.lucene.benchmark.quality.trec.TrecJudge;
 import org.apache.lucene.benchmark.quality.trec.TrecTopicsReader;
@@ -88,6 +91,9 @@ public class TopicEvaluator {
 
         options.addRequiredOption("m","translation-models",true,
                 "choice: none,GT,ET - can be multiple sep. by ','");
+
+        options.addRequiredOption("a","analyzer",true,
+                "english/stop-lower-only");
 
         CommandLineParser parser = new DefaultParser();
         try {
@@ -243,7 +249,20 @@ public class TopicEvaluator {
             apiPrePro = SimilarityApiParser.Preprocessing.Stemmed;
         }
 
-        SimilarityApiParser qqParser = new SimilarityApiParser("title", "body", useAugmented, mm, apiPrePro);
+        Analyzer analyzer=null;
+
+        switch (parsedArgs.getOptionValue("a")){
+            case "english":
+                analyzer = new EnglishAnalyzer(StopWords.nltkStopWords());
+                break;
+            case "stop-lower-only":
+                analyzer = new StopAnalyzer(StopWords.nltkStopWords());
+                break;
+            default:
+                throw new RuntimeException("analyzer not supported: "+parsedArgs.getOptionValue("a"));
+        }
+
+        SimilarityApiParser qqParser = new SimilarityApiParser("title", "body", useAugmented, mm, apiPrePro,analyzer);
         qqParser.setSimilarityApi(getISimilarityApi(similarityOption));
 
         //
