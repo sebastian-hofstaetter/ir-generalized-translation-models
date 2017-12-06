@@ -1,11 +1,9 @@
 import at.ac.tuwien.ifs.api.ISimilarityApi;
 import at.ac.tuwien.ifs.api.SimilarTermModel;
-import at.ac.tuwien.ifs.api.SimilarityApi;
 import at.ac.tuwien.ifs.query.AugmentedTermQuery;
 import at.ac.tuwien.ifs.query.TermWeightTuple;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.analysis.en.EnglishAnalyzer;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.benchmark.quality.QualityQuery;
 import org.apache.lucene.benchmark.quality.QualityQueryParser;
@@ -27,7 +25,7 @@ public class SimilarityApiParser implements QualityQueryParser {
 
     public enum Preprocessing {
         Tokenize,
-        Stemmed
+        FullAnalyzer
     }
 
     private ISimilarityApi similarityApi;
@@ -120,7 +118,7 @@ public class SimilarityApiParser implements QualityQueryParser {
         //
         String[] queryTerms = null;
 
-        if(preprocessingMethod == Preprocessing.Stemmed) {
+        if(preprocessingMethod == Preprocessing.FullAnalyzer) {
 
             try {
                 queryTerms = termsFromTokenStream(analyzer.tokenStream(indexField, qq.getValue(queryPart)));
