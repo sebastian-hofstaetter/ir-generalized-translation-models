@@ -1,7 +1,9 @@
-# Hello
+# Generalizing Translation Models
 This repository contains a Lucene &amp; Solr implementation of the paper: 
 
-  *Generalizing Translation Models in the Probabilistic Relevance Framework* Rekabsaz, Lupu, Hanbury, Zuccon - CIKM '16 ([ACM citation](http://dl.acm.org/citation.cfm?id=2983833))
+  *Generalizing Translation Models in the Probabilistic Relevance Framework* 
+  
+  Rekabsaz, Lupu, Hanbury, Zuccon - CIKM '16 ([ACM citation](http://dl.acm.org/citation.cfm?id=2983833))
 
 ## Implementation
 
