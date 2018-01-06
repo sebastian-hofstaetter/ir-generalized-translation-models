@@ -1,4 +1,4 @@
-# Generalizing Translation Models
+# Information Retrieval - Generalizing Translation Models
 This repository contains a Lucene &amp; Solr implementation of the paper: 
 
   *Generalizing Translation Models in the Probabilistic Relevance Framework* 
