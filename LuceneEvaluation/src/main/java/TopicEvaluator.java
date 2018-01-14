@@ -39,7 +39,6 @@ public class TopicEvaluator {
     private static CommandLine parsedArgs;
     private static FSDirectory indexDirectory;
     private static Path topicsPath;
-    private static Path qrelsPath;
     private static IndexReader reader;
 
     public static void main(String[] args) throws Exception {
@@ -75,8 +74,8 @@ public class TopicEvaluator {
         options.addRequiredOption("t", "topic-file", true,
                 "location of a TREC topic file");
 
-        options.addRequiredOption("q", "qrel-file", true,
-                "location of a TREC qrel file");
+        options.addRequiredOption("p", "parallel-count", true,
+                "hoe many threads should be used for batch evaluation");
 
         options.addRequiredOption("i", "index-directory", true,
                 "location of a lucene index (directory)");
@@ -118,7 +117,6 @@ public class TopicEvaluator {
         reader = DirectoryReader.open(indexDirectory);
 
         topicsPath = Paths.get(parsedArgs.getOptionValue("t"));
-        qrelsPath = Paths.get(parsedArgs.getOptionValue("q"));
 
         String[] similarityClasses = parsedArgs.getOptionValue("e").split(",");
         String[] translationModels = parsedArgs.getOptionValue("m").split(",");
@@ -156,7 +154,8 @@ public class TopicEvaluator {
                 }
             });
 
-            ExecutorService executorService = Executors.newFixedThreadPool(10);
+            int threadCount = Integer.parseInt(parsedArgs.getOptionValue("p"));
+            ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
 
             for (Path file : files) {
                 for (String sim : similarityClasses) {
@@ -248,9 +247,6 @@ public class TopicEvaluator {
         TrecTopicsReader qReader = new TrecTopicsReader();
         QualityQuery qqs[] = qReader.readQueries(Files.newBufferedReader(topicsPath, StandardCharsets.UTF_8));
 
-        Judge judge = new TrecJudge(Files.newBufferedReader(qrelsPath, StandardCharsets.UTF_8));
-        //judge.validateData(qqs, logger);
-
 
         //
         // prepare + set the parser + api instance
@@ -301,17 +297,14 @@ public class TopicEvaluator {
         //
         QualityBenchmark qrun = new QualityBenchmark(qqs, qqParser, searcher, docNameField);
         qrun.setMaxResults(Integer.parseInt(parsedArgs.getOptionValue("c")));
-        QualityStats stats[] = qrun.execute(judge, submitLog, new PrintWriter(new OutputStream() {
+
+        qrun.execute(null, submitLog, new PrintWriter(new OutputStream() {
             public void write(int b) {
             }
         }));
 
-        // print an average sum of the results
-        QualityStats avg = QualityStats.average(stats);
-
         synchronized (_lock) {
             System.out.println("Finishing " + submissionFile.toString() + " after (s): " + ((System.currentTimeMillis() - startTime) / 1000f));
-            avg.log("SUMMARY", 2, logger, "  ");
         }
     }
 
