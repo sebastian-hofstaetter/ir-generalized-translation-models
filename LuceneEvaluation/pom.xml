@@ -69,7 +69,7 @@
                         <manifest>
                             <classpathPrefix>lib/</classpathPrefix>
                             <addClasspath>true</addClasspath>
-                            <mainClass>TopicEvaluator</mainClass>
+                            <mainClass>MsMarcoSearcher</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

@@ -39,3 +39,9 @@
 
 LuceneEvaluation/index/**
 LuceneEvaluation/results/**
+.project
+*.prefs
+Extensions/.classpath
+LuceneEvaluation/.classpath
+.vscode/launch.json
+.vscode/settings.json
